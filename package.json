@@ -1,0 +1,33 @@
+{
+  "name": "koa-acl",
+  "version": "1.0.0",
+  "description": "acl middleware for koa",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha --harmony test/*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Jackong/koa-acl.git"
+  },
+  "keywords": [
+    "acl",
+    "koa"
+  ],
+  "author": "jackong <jackongc@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Jackong/koa-acl/issues"
+  },
+  "homepage": "https://github.com/Jackong/koa-acl",
+  "dependencies": {
+    "acl": "^0.4.8",
+    "co": "^4.6.0"
+  },
+  "devDependencies": {
+    "chai": "^3.2.0",
+    "koa": "^0.21.0",
+    "mocha": "^2.2.5",
+    "supertest-koa-agent": "^0.2.1"
+  }
+}
