@@ -17,7 +17,41 @@ describe('acl middleware', function() {
     before(function(done) {
         acl.addUserRoles('admin', 'admin', done);
     });
+    var app = koa();
+    app.use(function* (next) {
+        this.state.user = {id: this.query.id};
+        yield next;
+    });
+    app.use(acl.middleware(2));
+    app.use(function* (next){
+        this.body = 'ok';
+    });
 
+    describe('with unallowed resource', function() {
+        it('should be fail', function(done) {
+            request(app)
+                .post('/api?id=admin')
+                .expect(403)
+                .end(done);
+        });
+    });
+
+    describe('with allowed resource', function() {
+        it('should be ok', function(done) {
+            request(app)
+                .post('/api/users/11?id=admin')
+                .expect(200)
+                .end(done);
+        });
+    });
+
+    describe('with unallowed actions', function() {
+
+    });
+
+    describe('with allowed actions', function() {
+
+    });
 
     describe('with default user getter', function() {
         var app = koa();
