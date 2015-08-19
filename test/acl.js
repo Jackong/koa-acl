@@ -1,132 +1,100 @@
 var expect = require('chai').expect;
-var Acl = require('../lib/acl');
+var ACL = require('../lib/acl');
 var request = require('supertest-koa-agent');
 var koa = require('koa');
+var Acl = require('acl');
 
-var acl = new Acl(new Acl.memoryBackend());
+var backend = new Acl.memoryBackend();
 
-Acl.onGetUser(function() {
-    return this.state.user.id;
-});
+ACL({
+    user: ctx => {
+        return ctx.state.user._id
+    },
+    backend: ctx => {
+        return Promise.resolve(backend)
+    }
+})
 
-describe('acl middleware', function() {
+var acl = new Acl(backend)
 
+describe('middleware', () => {
     before(function(done) {
         acl.allow('admin', '/api/users', 'post', done);
     });
     before(function(done) {
-        acl.addUserRoles('admin', 'admin', done);
+        acl.addUserRoles('jackong', 'admin', done);
+    });
+    var app = koa();
+    app.use(function* (next) {
+        this.state.user = {_id: this.query.id};
+        yield next;
+    });
+    app.use(ACL.middleware({
+        users: 2,
+        roles: {
+            admin: 2
+        }
+    }));
+    app.use(function* (next){
+        this.body = 'ok';
     });
 
-    describe('for resource', function() {
-        var app = koa();
-        app.use(function* (next) {
-            this.state.user = {id: this.query.id};
-            yield next;
-        });
-        app.use(acl.middleware(2));
-        app.use(function* (next){
-            this.body = 'ok';
-        });
-
-        it('should be fail if unallowed', function(done) {
-            request(app)
-                .post('/api?id=admin')
-                .expect(403)
-                .end(done);
-        });
-
-        it('should be ok if allowed', function(done) {
-            request(app)
-                .post('/api/users/11?id=admin')
-                .expect(200)
-                .end(done);
-        });
-    });
-
-    describe('for actions', function() {
-        var app = koa();
-        app.use(function* (next) {
-            this.state.user = {id: this.query.id};
-            yield next;
-        });
-        app.use(acl.middleware(2));
-        app.use(function* (next){
-            this.body = 'ok';
-        });
-
-        it('should be fail if unallowed', function(done) {
-            request(app)
-                .put('/api/users?id=admin')
-                .expect(403)
-                .end(done);
-        });
-
-        it('should be ok if allowed', function(done) {
-            request(app)
-                .post('/api/users?id=admin')
-                .expect(200)
-                .end(done);
-        });
-    });
-
-    describe('with default user getter', function() {
-        var app = koa();
-        app.use(function* (next) {
-            this.state.user = {id: this.query.id};
-            yield next;
-        });
-        app.use(acl.middleware());
-        app.use(function* (next){
-            this.body = 'ok';
-        });
-        describe('and un-authorized user', function() {
+    describe('user', () => {
+        describe('with short path', () => {
             it('should be fail', function(done) {
                 request(app)
-                    .post('/api/users?id=guest')
+                    .post('/api?id=jackong')
                     .expect(403)
                     .end(done);
             });
-        });
+        })
 
-        describe('and authorized user', function() {
-            it('should be success', function(done) {
+        describe('with long path', () => {
+            it('should be ok', function(done) {
                 request(app)
-                    .post('/api/users?id=admin')
-                    .expect(200, 'ok')
+                    .post('/api/users/11?id=jackong')
+                    .expect(200)
                     .end(done);
             });
-        });
+        })
+
+        describe('with guest user', () => {
+            it('should be fail', done => {
+                request(app)
+                    .post('/api/users/11?id=guest')
+                    .expect(403)
+                    .end(done)
+            })
+        })
     });
 
-    describe('with custom user getter', function() {
-        var app = koa();
-        app.use(function* (next) {
-            this.state.user = {id: this.query.id};
-            yield next;
-        });
-        app.use(acl.middleware(2, function() {
-            this.state.user = {id: this.query.cid};
-        }));
-        app.use(function* (next){
-            this.body = 'ok';
-        });
-        describe('and un-authorized user', function() {
+    describe('role', () => {
+
+        describe('with short path', () => {
             it('should be fail', function(done) {
                 request(app)
-                    .post('/api/users?id=admin&cid=guest')
+                    .post('/api?id=jackong')
                     .expect(403)
                     .end(done);
             });
-        });
+        })
 
-        describe('and authorized user', function() {
-            it('should be success', function(done) {
+        describe('with long path', () => {
+            it('should be ok', function(done) {
                 request(app)
-                    .post('/api/users?id=guest&cid=admin')
-                    .expect(200, 'ok')
+                    .post('/api/users/11?id=jackong')
+                    .expect(200)
                     .end(done);
             });
-        });
-    });
-});
+        })
+
+        describe('with guest user', () => {
+            it('should be fail', done => {
+                request(app)
+                    .post('/api/users/11?id=guest')
+                    .expect(403)
+                    .end(done)
+            })
+        })
+    })
+})

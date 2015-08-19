@@ -27,21 +27,16 @@
 
 #### Setting options.
 ```js
-var Acl = require('koa-acl');
-var app = require('koa')();
-
-app.use(
-    Acl({
-        //user getter
-        user: function(ctx) {
-            return ctx.state.user._id;
-        },
-        //backend getter
-        backend: function(ctx) {
-            return new acl.memoryBackend();
-        }
-    })
-);
+var ACL = require('koa-acl');
+var Acl = require('acl');
+ACL({
+    //user getter
+    user: function(ctx) {
+        return ctx.state.user._id;
+    },
+    //backend getter
+    backend: new Acl.memoryBackend()
+})
 ```
 
 
@@ -50,8 +45,8 @@ app.use(
 var Acl = require('koa-acl');
 route.delete(
     '/api/users/:user',
-    Acl.user(userIds, numPathComponents),
-    Acl.role(roleNames, numPathComponents),
+    Acl.user(numPathComponents, userIds),
+    Acl.role(numPathComponents, roleNames),
     function* (next) {
         //do something...
     }
@@ -63,35 +58,48 @@ route.delete(
 #### Acl(options)
 Configure options for Acl.
 
-__options__
+__Arguments__
 ```js
-user    {Function} user ID getter.
-backend {Object|Function|Promise} backend getter.
+options.user    {Function} user ID getter.
+options.backend {Object|Function|Promise} backend getter.
 
 ```
 ----------
 
-#### Acl.user([userIds[, numPathComponents]] | [numPathComponents[, userIds]])
+#### Acl.user(numPathComponents[, userIds])
 
-Authorizing by users.
+Authorizing by any user in users.
 
 __Arguments__
 ```js
-userIds {Array|String|Number}   user IDs (defaults to options.user).
 numPathComponents   {Number}    number of components in the url to be considered part of the resource name (defaults to number of components in the full url).
+userIds {Array|String|Function}   user IDs (defaults to options.user).
 ```
 ----------
 
-#### Acl.role(roles[, numPathComponents])
+#### Acl.role(numPathComponents[,roles])
 
-Authorizing by roles.
+Authorizing by any role in roles.
 
 __Arguments__
 
 ```js
-roles   {Array|String} roles.
 numPathComponents (see Acl.user)
+roles   {Array|String|Function} roles.
 ```
+----------
+
+#### Acl.middleware(options)
+
+Authorizing by any user in users or role in roles.
+
+__Arguments__
+
+```js
+options.users   {Object|Number}    a map of user id to number of components in the url.
+options.roles   {Object|Array}    a map of role name to number of components in the url.
+```
+
 
 ## Tests
 ```js
