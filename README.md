@@ -1,4 +1,4 @@
-# koa-acl
+# ACL middleware for koa.
 
 [![NPM version][npm-image]][npm-url]
 [![build status][travis-image]][travis-url]
@@ -17,30 +17,89 @@
 [gittip-image]: https://img.shields.io/gratipay/Jackong.svg
 [gittip-url]: https://gratipay.com/~Jackong
 
-### ACL middleware for koa.
+## Features
 
-#### Differences with [acl](https://github.com/optimalbits/node_acl)
-* Add `Acl.onGetUser` for custom user getter.
-* Override `Acl#middleware` to adapt koa.
+* More smart to adapt koa.
 
-#### Examples
+## Document
 
-##### Setting default user getter.
+### Examples
+
+#### Setting options.
 ```js
 var Acl = require('koa-acl');
-Acl.onGetUser(function() {
-    return this.state.user._id;
-});
+var app = require('koa')();
+
+app.use(
+    Acl({
+        //user getter
+        user: function(ctx) {
+            return ctx.state.user._id;
+        },
+        //backend getter
+        backend: function(ctx) {
+            return new acl.memoryBackend();
+        }
+    })
+);
 ```
 
-##### Middleware(see [Acl#middleware](https://github.com/optimalbits/node_acl#middleware))
+
+#### Middleware for users or roles.
 ```js
 var Acl = require('koa-acl');
-var acl = new Acl(new Acl.memoryBackend());
-route.delete('/api/users/:user', acl.middleware(2));
+route.delete(
+    '/api/users/:user',
+    Acl.user(userIds, numPathComponents),
+    Acl.role(roleNames, numPathComponents),
+    function* (next) {
+        //do something...
+    }
+);
+```
+
+### Methods
+
+#### Acl(options)
+Configure options for Acl.
+
+__options__
+```js
+user    {Function} user ID getter.
+backend {Object|Function|Promise} backend getter.
+
+```
+----------
+
+#### Acl.user([userIds[, numPathComponents]] | [numPathComponents[, userIds]])
+
+Authorizing by users.
+
+__Arguments__
+```js
+userIds {Array|String|Number}   user IDs (defaults to options.user).
+numPathComponents   {Number}    number of components in the url to be considered part of the resource name (defaults to number of components in the full url).
+```
+----------
+
+#### Acl.role(roles[, numPathComponents])
+
+Authorizing by roles.
+
+__Arguments__
+
+```js
+roles   {Array|String} roles.
+numPathComponents (see Acl.user)
+```
+
+## Tests
+```js
+npm test
 ```
 
 
-# Licences
+
+## Licences
 
 [MIT](LICENSE)
