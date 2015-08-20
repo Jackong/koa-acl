@@ -29,24 +29,25 @@
 ```js
 var ACL = require('koa-acl');
 var Acl = require('acl');
-ACL({
-    //user getter
-    user: function(ctx) {
-        return ctx.state.user._id;
-    },
-    //backend getter
-    backend: new Acl.memoryBackend()
-})
+app.use(
+    ACL({
+        //user getter
+        user: function(ctx) {
+            return ctx.state.user._id;
+        },
+        //backend getter
+        backend: new Acl.memoryBackend()
+    })
+);
 ```
 
 
 #### Middleware for users or roles.
 ```js
-var Acl = require('koa-acl');
+var ACL = require('koa-acl');
 route.delete(
     '/api/users/:user',
-    Acl.user(numPathComponents, userIds),
-    Acl.role(numPathComponents, roleNames),
+    ACL.middleware(2),
     function* (next) {
         //do something...
     }
@@ -61,44 +62,22 @@ Configure options for Acl.
 __Arguments__
 ```js
 options.user    {Function} user ID getter.
-options.backend {Object|Function|Promise} backend getter.
+options.backend {Object|Function} backend getter.
 
 ```
 ----------
 
-#### Acl.user(numPathComponents[, userIds])
+#### Acl.middleware(numPathComponents[, userId, actions])
 
-Authorizing by any user in users.
+Authorizing by user.
 
 __Arguments__
 ```js
 numPathComponents   {Number}    number of components in the url to be considered part of the resource name (defaults to number of components in the full url).
-userIds {Array|String|Function}   user IDs (defaults to options.user).
+userId {String|Function}   user ID (defaults to options.user).
+actions {String|Array}    lowercase.
 ```
 ----------
-
-#### Acl.role(numPathComponents[,roles])
-
-Authorizing by any role in roles.
-
-__Arguments__
-
-```js
-numPathComponents (see Acl.user)
-roles   {Array|String|Function} roles.
-```
-----------
-
-#### Acl.middleware(options)
-
-Authorizing by any user in users or role in roles.
-
-__Arguments__
-
-```js
-options.users   {Object|Number}    a map of user id to number of components in the url.
-options.roles   {Object|Array}    a map of role name to number of components in the url.
-```
 
 
 ## Tests
